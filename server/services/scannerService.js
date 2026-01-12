@@ -94,31 +94,39 @@ async function fetchFromFacebook() {
 
 /**
  * Fetch from RSS feed (RSS.app or similar service)
- * This works great for Jefferson County Scanner Facebook page!
+ * Supports multiple RSS feeds separated by commas
  */
 async function fetchFromRSS() {
-  const rssUrl = process.env.FACEBOOK_RSS_URL;
+  const rssUrls = process.env.FACEBOOK_RSS_URL;
 
-  if (!rssUrl) {
+  if (!rssUrls) {
     console.log('RSS feed URL not configured');
     return [];
   }
 
-  try {
-    console.log('Fetching from Jefferson County Scanner RSS feed...');
+  // Support multiple RSS feeds separated by commas
+  const feedUrls = rssUrls.split(',').map(url => url.trim()).filter(url => url.length > 0);
 
-    const parser = new Parser({
-      customFields: {
-        item: [
-          ['description', 'description'],
-          ['content:encoded', 'contentEncoded'],
-          ['pubDate', 'pubDate']
-        ]
-      }
-    });
+  console.log(`📡 Fetching from ${feedUrls.length} RSS feed(s)...`);
 
-    const feed = await parser.parseURL(rssUrl);
-    const incidents = [];
+  const allIncidents = [];
+
+  for (const rssUrl of feedUrls) {
+    try {
+      console.log(`  Fetching: ${rssUrl}`);
+
+      const parser = new Parser({
+        customFields: {
+          item: [
+            ['description', 'description'],
+            ['content:encoded', 'contentEncoded'],
+            ['pubDate', 'pubDate']
+          ]
+        }
+      });
+
+      const feed = await parser.parseURL(rssUrl);
+      const incidents = [];
 
     if (feed && feed.items) {
       console.log(`Found ${feed.items.length} scanner posts from RSS feed`);
@@ -157,14 +165,16 @@ async function fetchFromRSS() {
         }
       }
 
-      console.log(`Parsed ${incidents.length} incidents from RSS feed`);
+      console.log(`  ✅ Parsed ${incidents.length} incidents from this feed`);
+      allIncidents.push(...incidents);
+    } catch (error) {
+      console.error(`  ⚠️  Error fetching from ${rssUrl}:`, error.message);
+      // Continue with next feed even if this one fails
     }
-
-    return incidents;
-  } catch (error) {
-    console.error('Error fetching from RSS:', error.message);
-    return [];
   }
+
+  console.log(`✅ Total: ${allIncidents.length} incidents from all RSS feeds`);
+  return allIncidents;
 }
 
 /**

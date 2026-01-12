@@ -8,6 +8,7 @@ const newsService = require('./services/newsService');
 const weatherService = require('./services/weatherService');
 const flightsService = require('./services/flightsService');
 const scannerService = require('./services/scannerService');
+const trafficService = require('./services/trafficService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,11 +24,13 @@ app.get('/api/incidents', async (req, res) => {
     const news = await newsService.getIncidents();
     const weather = await weatherService.getAlerts();
     const scanner = await scannerService.getIncidents();
+    const traffic = await trafficService.getIncidents();
 
     const allIncidents = [
       ...news.map(item => ({ ...item, type: 'news' })),
       ...weather.map(item => ({ ...item, type: 'weather' })),
-      ...scanner.map(item => ({ ...item, type: 'scanner' }))
+      ...scanner.map(item => ({ ...item, type: 'scanner' })),
+      ...traffic.map(item => ({ ...item, type: 'traffic' }))
     ];
 
     res.json(allIncidents);
@@ -56,6 +59,7 @@ const NEWS_INTERVAL = process.env.NEWS_REFRESH_INTERVAL || 15;
 const WEATHER_INTERVAL = process.env.WEATHER_REFRESH_INTERVAL || 30;
 const FLIGHTS_INTERVAL = process.env.FLIGHTS_REFRESH_INTERVAL || 5;
 const SCANNER_INTERVAL = process.env.SCANNER_REFRESH_INTERVAL || 10;
+const TRAFFIC_INTERVAL = process.env.TRAFFIC_REFRESH_INTERVAL || 10;
 
 console.log('Setting up scheduled jobs...');
 
@@ -83,6 +87,12 @@ cron.schedule(`*/${SCANNER_INTERVAL} * * * *`, async () => {
   await scannerService.fetchAndCache();
 });
 
+// Fetch traffic updates every N minutes
+cron.schedule(`*/${TRAFFIC_INTERVAL} * * * *`, async () => {
+  console.log('Fetching traffic updates...');
+  await trafficService.fetchAndCache();
+});
+
 // Initial data fetch on startup
 (async () => {
   console.log('Performing initial data fetch...');
@@ -91,7 +101,8 @@ cron.schedule(`*/${SCANNER_INTERVAL} * * * *`, async () => {
       newsService.fetchAndCache(),
       weatherService.fetchAndCache(),
       flightsService.fetchAndCache(),
-      scannerService.fetchAndCache()
+      scannerService.fetchAndCache(),
+      trafficService.fetchAndCache()
     ]);
     console.log('Initial data fetch complete');
   } catch (error) {
