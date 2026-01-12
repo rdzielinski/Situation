@@ -4,7 +4,7 @@ const { fetchAndCache } = require('./server/services/scannerService');
 
 async function debugScanner() {
   console.log('\n🔍 Debugging Scanner Feed\n');
-  console.log('='repeat(80));
+  console.log('='.repeat(80));
 
   console.log('\n📋 Environment Check:');
   console.log(`  RSS URL configured: ${process.env.FACEBOOK_RSS_URL ? '✅ YES' : '❌ NO'}`);
@@ -14,12 +14,12 @@ async function debugScanner() {
   console.log(`  Facebook token: ${process.env.FACEBOOK_ACCESS_TOKEN ? '✅ YES' : '❌ NO (expected)'}`);
 
   console.log('\n🚀 Fetching scanner data...\n');
-  console.log('='repeat(80));
+  console.log('='.repeat(80));
 
   try {
     const incidents = await fetchAndCache();
 
-    console.log('\n'repeat(80));
+    console.log('='.repeat(80));
     console.log(`\n✅ Successfully fetched ${incidents.length} incidents\n`);
 
     if (incidents.length === 0) {
@@ -53,7 +53,7 @@ async function debugScanner() {
       });
     }
 
-    console.log('='repeat(80));
+    console.log('='.repeat(80));
     console.log('\n✅ Debug complete!\n');
 
   } catch (error) {

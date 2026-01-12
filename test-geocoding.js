@@ -40,7 +40,7 @@ const testPosts = [
 
 async function runTests() {
   console.log('\n🧪 Testing Enhanced Geocoding System\n');
-  console.log('='repeat(80));
+  console.log('='.repeat(80));
 
   for (let i = 0; i < testPosts.length; i++) {
     const post = testPosts[i];
