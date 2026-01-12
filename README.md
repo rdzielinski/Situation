@@ -33,6 +33,7 @@ Southeastern Wisconsin including:
 - Node.js + Express
 - Axios for HTTP requests
 - Cheerio for web scraping
+- RSS Parser for scanner feeds
 - node-cron for scheduled tasks
 
 ### Frontend
@@ -42,9 +43,9 @@ Southeastern Wisconsin including:
 
 ### Data Sources
 - **News**: Milwaukee Journal Sentinel, Fox6, TMJ4, WISN
-- **Weather**: National Weather Service API
-- **Flights**: OpenSky Network API (free tier)
-- **Scanner**: Jefferson County Scanner Facebook page
+- **Weather**: National Weather Service API (free, no auth required)
+- **Flights**: OpenSky Network API (free tier, no auth required)
+- **Scanner**: Jefferson County Scanner via RSS feed (✅ pre-configured!)
 
 ## Installation
 
@@ -216,30 +217,29 @@ Situation/
 
 ### Scanner Data Sources
 
-⚠️ **Facebook API Limitation**: You cannot access Facebook posts via the official API unless you are an admin of the page. The Jefferson County Scanner Facebook page cannot be accessed this way.
+✅ **RSS Feed (CONFIGURED & WORKING!)**
+- Jefferson County Scanner feed is already configured
+- Uses RSS.app to pull Facebook posts: `https://rss.app/feeds/F2oLkuuCprXqkL9R.xml`
+- Updates automatically every 10 minutes
+- No API key or authentication required!
 
-**Recommended Alternatives:**
+⚠️ **Facebook API Limitation**: Direct Facebook API requires page admin access (not possible for public pages)
 
-1. **Twitter/X API** (Easiest)
+**Additional Alternative Sources:**
+
+1. **Twitter/X API**
    - Check if Jefferson County Scanner has a Twitter account
    - Free tier: https://developer.twitter.com
    - Add `TWITTER_HANDLE` and `TWITTER_BEARER_TOKEN` to `.env`
 
-2. **RSS Feeds**
-   - Use services like RSS.app or RSS.Box to create RSS feeds from Facebook
-   - Add `FACEBOOK_RSS_URL` to `.env`
-
-3. **Broadcastify** (Best for live scanner audio)
+2. **Broadcastify** (Best for live scanner audio)
    - Listen to live feeds: https://www.broadcastify.com/
    - Jefferson County: https://www.broadcastify.com/listen/ctid/2625
 
-4. **Manual Integration**
-   - Monitor the Facebook page manually
-   - Update incidents via a simple admin interface (future feature)
-
-5. **Use Mock Data** (Default)
-   - App includes realistic mock scanner data for development
-   - Perfect for testing the platform
+3. **Create Your Own RSS Feeds**
+   - Use RSS.app or RSS.Box to create RSS feeds from any Facebook page
+   - Free tier available
+   - Add custom feeds to `FACEBOOK_RSS_URL` in `.env`
 
 ### FlightRadar24 (Optional)
 For enhanced flight tracking:

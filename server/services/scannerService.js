@@ -1,5 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const Parser = require('rss-parser');
 const fs = require('fs').promises;
 const path = require('path');
 const { getCoordinates } = require('../utils/geocode');
@@ -92,28 +93,76 @@ async function fetchFromFacebook() {
 }
 
 /**
- * Try to fetch from Facebook RSS feed (if available)
- * Note: Most Facebook pages don't have RSS anymore, but worth trying
+ * Fetch from RSS feed (RSS.app or similar service)
+ * This works great for Jefferson County Scanner Facebook page!
  */
 async function fetchFromRSS() {
-  try {
-    // Facebook RSS feeds are mostly deprecated, but some third-party services exist
-    // Example: RSS.app, RSS.Box, or similar services
-    const rssUrl = process.env.FACEBOOK_RSS_URL;
+  const rssUrl = process.env.FACEBOOK_RSS_URL;
 
-    if (!rssUrl) {
-      return [];
+  if (!rssUrl) {
+    console.log('RSS feed URL not configured');
+    return [];
+  }
+
+  try {
+    console.log('Fetching from Jefferson County Scanner RSS feed...');
+
+    const parser = new Parser({
+      customFields: {
+        item: [
+          ['description', 'description'],
+          ['content:encoded', 'contentEncoded'],
+          ['pubDate', 'pubDate']
+        ]
+      }
+    });
+
+    const feed = await parser.parseURL(rssUrl);
+    const incidents = [];
+
+    if (feed && feed.items) {
+      console.log(`Found ${feed.items.length} scanner posts from RSS feed`);
+
+      // Process most recent items (limit to 20 to avoid too much data)
+      const recentItems = feed.items.slice(0, 20);
+
+      for (const item of recentItems) {
+        // Get the content (try content:encoded first, then description)
+        const content = item.contentEncoded || item.description || item.content || '';
+        const title = item.title || '';
+
+        // Combine title and content for better parsing
+        const fullText = `${title} ${content}`.replace(/<[^>]*>/g, ''); // Strip HTML tags
+
+        if (fullText.trim()) {
+          const type = parseIncidentType(fullText);
+          const coords = await getCoordinates(fullText);
+
+          // Create a clean description (first 200 chars without HTML)
+          const cleanDescription = fullText.substring(0, 300).trim();
+
+          incidents.push({
+            id: item.guid || item.link || `rss-${Date.now()}-${Math.random()}`,
+            title: `Scanner: ${type.toUpperCase()}`,
+            description: cleanDescription,
+            fullText: fullText.substring(0, 500), // Keep more text for detail view
+            type,
+            lat: coords.lat,
+            lon: coords.lon,
+            location: coords.city || 'Jefferson County',
+            link: item.link || FACEBOOK_PAGE_URL,
+            timestamp: item.pubDate || item.isoDate || new Date().toISOString(),
+            source: 'rss'
+          });
+        }
+      }
+
+      console.log(`Parsed ${incidents.length} incidents from RSS feed`);
     }
 
-    console.log('Attempting to fetch from RSS feed...');
-    const response = await axios.get(rssUrl);
-
-    // Parse RSS (would need an RSS parser library like 'rss-parser')
-    // This is a placeholder for now
-    console.log('RSS parsing not yet implemented');
-    return [];
+    return incidents;
   } catch (error) {
-    console.error('Error fetching RSS:', error.message);
+    console.error('Error fetching from RSS:', error.message);
     return [];
   }
 }
