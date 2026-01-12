@@ -167,6 +167,7 @@ async function fetchFromRSS() {
 
       console.log(`  ✅ Parsed ${incidents.length} incidents from this feed`);
       allIncidents.push(...incidents);
+    }
     } catch (error) {
       console.error(`  ⚠️  Error fetching from ${rssUrl}:`, error.message);
       // Continue with next feed even if this one fails
