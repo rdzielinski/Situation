@@ -214,11 +214,32 @@ Situation/
 - **Free**: No API key required
 - **Documentation**: https://www.weather.gov/documentation/services-web-api
 
-### Facebook Graph API (Optional)
-To access Jefferson County Scanner posts:
-1. Create a Facebook App at https://developers.facebook.com
-2. Get a page access token with `pages_read_engagement` permission
-3. Add to `.env` as `FACEBOOK_ACCESS_TOKEN`
+### Scanner Data Sources
+
+⚠️ **Facebook API Limitation**: You cannot access Facebook posts via the official API unless you are an admin of the page. The Jefferson County Scanner Facebook page cannot be accessed this way.
+
+**Recommended Alternatives:**
+
+1. **Twitter/X API** (Easiest)
+   - Check if Jefferson County Scanner has a Twitter account
+   - Free tier: https://developer.twitter.com
+   - Add `TWITTER_HANDLE` and `TWITTER_BEARER_TOKEN` to `.env`
+
+2. **RSS Feeds**
+   - Use services like RSS.app or RSS.Box to create RSS feeds from Facebook
+   - Add `FACEBOOK_RSS_URL` to `.env`
+
+3. **Broadcastify** (Best for live scanner audio)
+   - Listen to live feeds: https://www.broadcastify.com/
+   - Jefferson County: https://www.broadcastify.com/listen/ctid/2625
+
+4. **Manual Integration**
+   - Monitor the Facebook page manually
+   - Update incidents via a simple admin interface (future feature)
+
+5. **Use Mock Data** (Default)
+   - App includes realistic mock scanner data for development
+   - Perfect for testing the platform
 
 ### FlightRadar24 (Optional)
 For enhanced flight tracking:
@@ -243,10 +264,12 @@ For enhanced flight tracking:
 - Free tier may have delays
 - Consider upgrading to authenticated access
 
-### Facebook scanner not working
-- Default uses mock data
-- Requires Facebook access token (see configuration)
-- Alternative: scrape from web or use Twitter feeds
+### Scanner data not showing / Facebook not working
+- **This is expected** - Facebook API requires page admin access
+- App uses mock data by default (this is normal!)
+- Check if they have a Twitter account instead
+- Consider using Broadcastify or other scanner sources
+- Mock data updates automatically to simulate real incidents
 
 ## Contributing
 

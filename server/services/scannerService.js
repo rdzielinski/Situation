@@ -92,18 +92,110 @@ async function fetchFromFacebook() {
 }
 
 /**
+ * Try to fetch from Facebook RSS feed (if available)
+ * Note: Most Facebook pages don't have RSS anymore, but worth trying
+ */
+async function fetchFromRSS() {
+  try {
+    // Facebook RSS feeds are mostly deprecated, but some third-party services exist
+    // Example: RSS.app, RSS.Box, or similar services
+    const rssUrl = process.env.FACEBOOK_RSS_URL;
+
+    if (!rssUrl) {
+      return [];
+    }
+
+    console.log('Attempting to fetch from RSS feed...');
+    const response = await axios.get(rssUrl);
+
+    // Parse RSS (would need an RSS parser library like 'rss-parser')
+    // This is a placeholder for now
+    console.log('RSS parsing not yet implemented');
+    return [];
+  } catch (error) {
+    console.error('Error fetching RSS:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Fetch from Twitter/X if they have an account
+ */
+async function fetchFromTwitter() {
+  const twitterHandle = process.env.TWITTER_HANDLE; // e.g., '@JeffersonCoScan'
+  const twitterToken = process.env.TWITTER_BEARER_TOKEN;
+
+  if (!twitterHandle || !twitterToken) {
+    return [];
+  }
+
+  try {
+    console.log(`Fetching from Twitter: ${twitterHandle}...`);
+
+    // Twitter API v2 endpoint
+    const response = await axios.get('https://api.twitter.com/2/tweets/search/recent', {
+      params: {
+        query: `from:${twitterHandle.replace('@', '')}`,
+        max_results: 20,
+        'tweet.fields': 'created_at,text'
+      },
+      headers: {
+        'Authorization': `Bearer ${twitterToken}`
+      }
+    });
+
+    if (response.data && response.data.data) {
+      const incidents = [];
+
+      for (const tweet of response.data.data) {
+        const type = parseIncidentType(tweet.text);
+        const coords = await getCoordinates(tweet.text);
+
+        incidents.push({
+          id: tweet.id,
+          title: `Scanner: ${type.toUpperCase()}`,
+          description: tweet.text,
+          type,
+          lat: coords.lat,
+          lon: coords.lon,
+          location: coords.city || 'Jefferson County',
+          link: `https://twitter.com/${twitterHandle}/status/${tweet.id}`,
+          timestamp: tweet.created_at
+        });
+      }
+
+      return incidents;
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Error fetching from Twitter:', error.message);
+    return [];
+  }
+}
+
+/**
  * Fetch from alternative scanner sources
  * (Broadcastify, RadioReference, etc.)
  */
 async function fetchFromAlternativeSources() {
-  // In a real implementation, you might scrape from:
-  // - Broadcastify.com feeds
-  // - RadioReference.com
-  // - Local scanner websites
-  // - Twitter feeds of scanner accounts
+  const incidents = [];
 
-  console.log('Alternative scanner sources not yet implemented');
-  return [];
+  // Try RSS first
+  const rssIncidents = await fetchFromRSS();
+  incidents.push(...rssIncidents);
+
+  // Try Twitter
+  const twitterIncidents = await fetchFromTwitter();
+  incidents.push(...twitterIncidents);
+
+  // Could add more sources:
+  // - Broadcastify.com feeds (requires scraping or API)
+  // - RadioReference.com
+  // - Local police department feeds
+  // - PulsePoint (fire/EMS incidents)
+
+  return incidents;
 }
 
 /**
