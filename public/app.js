@@ -4,6 +4,8 @@ let map;
 let markers = [];
 let allIncidents = [];
 let allFlights = [];
+let timeFilterHours = 1; // Default to last 1 hour
+let radarLayer = null;
 
 // Initialize map centered on Milwaukee
 const CENTER_LAT = 43.0389;
@@ -45,11 +47,31 @@ function initEventListeners() {
     // Refresh button
     document.getElementById('refresh-btn').addEventListener('click', fetchData);
 
-    // Filter checkboxes
+    // Type filter checkboxes
     document.getElementById('filter-news').addEventListener('change', updateDisplay);
     document.getElementById('filter-weather').addEventListener('change', updateDisplay);
     document.getElementById('filter-scanner').addEventListener('change', updateDisplay);
+    document.getElementById('filter-traffic').addEventListener('change', updateDisplay);
     document.getElementById('filter-flights').addEventListener('change', updateDisplay);
+
+    // Time filter buttons
+    document.querySelectorAll('.time-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.time-filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+
+            const hours = e.target.dataset.hours;
+            timeFilterHours = hours === 'all' ? 'all' : parseInt(hours);
+            updateDisplay();
+        });
+    });
+
+    // Notifications button
+    const notificationBtn = document.getElementById('enable-notifications');
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', requestNotificationPermission);
+        updateNotificationButtonState();
+    }
 }
 
 /**
@@ -78,6 +100,7 @@ async function fetchData() {
         updateDisplay();
         updateLastUpdate();
         updateStats();
+        checkForNewIncidents();
 
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -98,13 +121,27 @@ function updateDisplay() {
     const showNews = document.getElementById('filter-news').checked;
     const showWeather = document.getElementById('filter-weather').checked;
     const showScanner = document.getElementById('filter-scanner').checked;
+    const showTraffic = document.getElementById('filter-traffic').checked;
     const showFlights = document.getElementById('filter-flights').checked;
 
-    // Filter incidents
+    // Calculate time threshold
+    const now = Date.now();
+    const timeThreshold = timeFilterHours === 'all' ? 0 : now - (timeFilterHours * 60 * 60 * 1000);
+
+    // Filter incidents by type and time
     const filteredIncidents = allIncidents.filter(incident => {
+        // Type filter
         if (incident.type === 'news' && !showNews) return false;
         if (incident.type === 'weather' && !showWeather) return false;
         if (incident.type === 'scanner' && !showScanner) return false;
+        if (incident.type === 'traffic' && !showTraffic) return false;
+
+        // Time filter (skip for weather alerts which don't have typical timestamps)
+        if (timeFilterHours !== 'all' && incident.timestamp) {
+            const incidentTime = new Date(incident.timestamp).getTime();
+            if (incidentTime < timeThreshold) return false;
+        }
+
         return true;
     });
 
@@ -261,11 +298,13 @@ function updateStats() {
     const newsCount = allIncidents.filter(i => i.type === 'news').length;
     const weatherCount = allIncidents.filter(i => i.type === 'weather').length;
     const scannerCount = allIncidents.filter(i => i.type === 'scanner').length;
+    const trafficCount = allIncidents.filter(i => i.type === 'traffic').length;
     const flightsCount = allFlights.length;
 
     document.getElementById('news-count').textContent = newsCount;
     document.getElementById('weather-count').textContent = weatherCount;
     document.getElementById('scanner-count').textContent = scannerCount;
+    document.getElementById('traffic-count').textContent = trafficCount;
     document.getElementById('flights-count').textContent = flightsCount;
 }
 
@@ -310,3 +349,144 @@ function showError(message) {
     const listElement = document.getElementById('incident-list');
     listElement.innerHTML = `<div class="loading" style="color: #ff4444;">${message}</div>`;
 }
+
+/**
+ * Browser Notifications
+ */
+let lastIncidentCount = 0;
+
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        alert('This browser does not support desktop notifications');
+        return;
+    }
+
+    const permission = await Notification.requestPermission();
+    updateNotificationButtonState();
+
+    if (permission === 'granted') {
+        showNotification('Notifications Enabled', 'You will now receive alerts for new incidents');
+    }
+}
+
+function updateNotificationButtonState() {
+    const btn = document.getElementById('enable-notifications');
+    if (!btn) return;
+
+    if (!('Notification' in window)) {
+        btn.textContent = '🔕 Not Supported';
+        btn.disabled = true;
+        return;
+    }
+
+    if (Notification.permission === 'granted') {
+        btn.textContent = '🔔 Notifications On';
+        btn.classList.add('enabled');
+        btn.disabled = false;
+    } else if (Notification.permission === 'denied') {
+        btn.textContent = '🔕 Notifications Blocked';
+        btn.disabled = true;
+    } else {
+        btn.textContent = '🔔 Enable Notifications';
+        btn.classList.remove('enabled');
+        btn.disabled = false;
+    }
+}
+
+function showNotification(title, body, data = {}) {
+    if (Notification.permission !== 'granted') return;
+
+    const notification = new Notification(title, {
+        body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: data.id || 'wisconsin-situation-watch',
+        requireInteraction: false,
+        ...data
+    });
+
+    notification.onclick = () => {
+        window.focus();
+        if (data.lat && data.lon) {
+            map.setView([data.lat, data.lon], 14);
+        }
+        notification.close();
+    };
+}
+
+function checkForNewIncidents() {
+    if (Notification.permission !== 'granted') return;
+
+    const currentCount = allIncidents.length;
+
+    if (lastIncidentCount > 0 && currentCount > lastIncidentCount) {
+        const newCount = currentCount - lastIncidentCount;
+        const latestIncident = allIncidents[0]; // Assuming sorted by newest
+
+        showNotification(
+            newCount + ' New Incident' + (newCount > 1 ? 's' : ''),
+            latestIncident.title + ' - ' + (latestIncident.location || 'Unknown location'),
+            {
+                lat: latestIncident.lat,
+                lon: latestIncident.lon,
+                id: latestIncident.id
+            }
+        );
+    }
+
+    lastIncidentCount = currentCount;
+}
+
+/**
+ * Weather Radar Overlay
+ */
+function toggleWeatherRadar() {
+    if (radarLayer) {
+        map.removeLayer(radarLayer);
+        radarLayer = null;
+        return false;
+    }
+
+    // Add RainViewer radar overlay
+    // RainViewer provides free weather radar tiles
+    radarLayer = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/{z}/{x}/{y}/2/1_1.png', {
+        attribution: 'Weather data © <a href="https://rainviewer.com">RainViewer</a>',
+        opacity: 0.6,
+        zIndex: 500
+    }).addTo(map);
+
+    return true;
+}
+
+// Add radar toggle button to map
+L.Control.RadarToggle = L.Control.extend({
+    onAdd: function(map) {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        const button = L.DomUtil.create('a', 'radar-toggle-btn', container);
+
+        button.innerHTML = '🌧️';
+        button.href = '#';
+        button.title = 'Toggle Weather Radar';
+        button.style.cssText = 'font-size: 20px; width: 30px; height: 30px; line-height: 30px; text-align: center; text-decoration: none; background: white; display: block;';
+
+        L.DomEvent.on(button, 'click', function(e) {
+            L.DomEvent.preventDefault(e);
+            const isActive = toggleWeatherRadar();
+            button.style.background = isActive ? '#4169e1' : 'white';
+            button.style.color = isActive ? 'white' : 'black';
+        });
+
+        return container;
+    }
+});
+
+L.control.radarToggle = function(opts) {
+    return new L.Control.RadarToggle(opts);
+};
+
+// Add radar control to map after initialization
+setTimeout(() => {
+    if (map) {
+        L.control.radarToggle({ position: 'topright' }).addTo(map);
+    }
+}, 1000);

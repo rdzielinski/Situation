@@ -166,6 +166,54 @@ header {
     color: white;
 }
 
+.filter-label.traffic {
+    background: #ff8c00;
+    color: white;
+}
+
+.filter-label.outage {
+    background: #9400d3;
+    color: white;
+}
+
+/* Time Filters */
+.time-filters {
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.time-filter-label {
+    font-size: 0.85rem;
+    color: #999;
+    margin-right: 0.5rem;
+}
+
+.time-filter-btn {
+    background: #2d2d2d;
+    color: #999;
+    border: 1px solid #444;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.time-filter-btn:hover {
+    background: #3d3d3d;
+    color: #fff;
+}
+
+.time-filter-btn.active {
+    background: #ff4444;
+    color: white;
+    border-color: #ff4444;
+}
+
 /* Incident List */
 .incident-list {
     flex: 1;
@@ -248,6 +296,14 @@ header {
     background: #32cd32;
 }
 
+.incident-badge.traffic {
+    background: #ff8c00;
+}
+
+.incident-badge.outage {
+    background: #9400d3;
+}
+
 .incident-description {
     font-size: 0.9rem;
     color: #ccc;
@@ -281,6 +337,33 @@ footer p {
     font-weight: 600;
 }
 
+.notification-btn {
+    background: #444;
+    color: #fff;
+    border: 1px solid #666;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+    margin-left: 1rem;
+}
+
+.notification-btn:hover {
+    background: #555;
+    border-color: #777;
+}
+
+.notification-btn.enabled {
+    background: #32cd32;
+    border-color: #32cd32;
+}
+
+.notification-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Custom Marker Styles */
 .marker-icon {
     background: #ff4444;
@@ -303,6 +386,14 @@ footer p {
 
 .marker-icon.flight {
     background: #32cd32;
+}
+
+.marker-icon.traffic {
+    background: #ff8c00;
+}
+
+.marker-icon.outage {
+    background: #9400d3;
 }
 
 /* Popup Styles */

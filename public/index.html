@@ -36,6 +36,10 @@
                     <span class="stat-label">Flights</span>
                     <span class="stat-value" id="flights-count">0</span>
                 </div>
+                <div class="stat">
+                    <span class="stat-label">Traffic</span>
+                    <span class="stat-value" id="traffic-count">0</span>
+                </div>
             </div>
         </header>
 
@@ -51,7 +55,7 @@
                     <button id="refresh-btn" class="refresh-btn">↻ Refresh</button>
                 </div>
 
-                <!-- Filters -->
+                <!-- Type Filters -->
                 <div class="filters">
                     <label>
                         <input type="checkbox" id="filter-news" checked>
@@ -66,9 +70,22 @@
                         <span class="filter-label scanner">Scanner</span>
                     </label>
                     <label>
+                        <input type="checkbox" id="filter-traffic" checked>
+                        <span class="filter-label traffic">Traffic</span>
+                    </label>
+                    <label>
                         <input type="checkbox" id="filter-flights" checked>
                         <span class="filter-label flights">Flights</span>
                     </label>
+                </div>
+
+                <!-- Time Filters -->
+                <div class="time-filters">
+                    <span class="time-filter-label">Show:</span>
+                    <button class="time-filter-btn active" data-hours="1">Last Hour</button>
+                    <button class="time-filter-btn" data-hours="6">Last 6 Hours</button>
+                    <button class="time-filter-btn" data-hours="24">Last 24 Hours</button>
+                    <button class="time-filter-btn" data-hours="all">All Time</button>
                 </div>
 
                 <!-- Incident List -->
@@ -80,8 +97,8 @@
 
         <!-- Footer -->
         <footer>
-            <p>Last updated: <span id="last-update">Never</span></p>
-            <p>Data sources: Local news, National Weather Service, OpenSky Network, Jefferson County Scanner</p>
+            <p>Last updated: <span id="last-update">Never</span> | <button id="enable-notifications" class="notification-btn">🔔 Enable Notifications</button></p>
+            <p>Data sources: Local news, NWS, OpenSky, WisDOT 511, Scanner feeds, We Energies</p>
         </footer>
     </div>
 
