@@ -1,0 +1,32 @@
+{
+  "name": "wisconsin-situation-watch",
+  "version": "1.0.0",
+  "description": "Southeastern Wisconsin situation awareness platform aggregating local news, weather, flights, and scanner activity",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "fetch-data": "node server/jobs/fetchData.js"
+  },
+  "keywords": [
+    "wisconsin",
+    "news",
+    "weather",
+    "flights",
+    "scanner",
+    "map"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "node-cron": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wisconsin Situation Watch</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <h1>🧀 Wisconsin Situation Watch</h1>
+                <p class="subtitle">Southeastern Wisconsin • Real-time Incident Tracking</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat">
+                    <span class="stat-label">News</span>
+                    <span class="stat-value" id="news-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Weather</span>
+                    <span class="stat-value" id="weather-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Scanner</span>
+                    <span class="stat-value" id="scanner-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Flights</span>
+                    <span class="stat-value" id="flights-count">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Map -->
+            <div id="map"></div>
+
+            <!-- Sidebar -->
+            <aside id="sidebar">
+                <div class="sidebar-header">
+                    <h2>Incidents & Alerts</h2>
+                    <button id="refresh-btn" class="refresh-btn">↻ Refresh</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters">
+                    <label>
+                        <input type="checkbox" id="filter-news" checked>
+                        <span class="filter-label news">News</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-weather" checked>
+                        <span class="filter-label weather">Weather</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-scanner" checked>
+                        <span class="filter-label scanner">Scanner</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-flights" checked>
+                        <span class="filter-label flights">Flights</span>
+                    </label>
+                </div>
+
+                <!-- Incident List -->
+                <div id="incident-list" class="incident-list">
+                    <div class="loading">Loading incidents...</div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>Last updated: <span id="last-update">Never</span></p>
+            <p>Data sources: Local news, National Weather Service, OpenSky Network, Jefferson County Scanner</p>
+        </footer>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+</html>
