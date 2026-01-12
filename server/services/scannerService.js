@@ -36,15 +36,14 @@ function parseIncidentType(text) {
 
 /**
  * Fetch scanner updates from Facebook page
- * Note: This is a simplified version. Facebook's actual API requires authentication
- * and permissions. In production, you'd use the Graph API with proper tokens.
+ * Note: Requires page access token (admin access required)
  */
 async function fetchFromFacebook() {
   const accessToken = process.env.FACEBOOK_ACCESS_TOKEN;
 
   if (!accessToken) {
-    console.log('Facebook access token not configured');
-    return await fetchMockData();
+    console.log('ℹ️  Facebook access token not configured (not required)');
+    return [];
   }
 
   try {
@@ -77,7 +76,8 @@ async function fetchFromFacebook() {
             lon: coords.lon,
             location: coords.city || 'Jefferson County',
             link: post.permalink_url,
-            timestamp: post.created_time
+            timestamp: post.created_time,
+            source: 'facebook'
           });
         }
       }
@@ -87,8 +87,8 @@ async function fetchFromFacebook() {
 
     return [];
   } catch (error) {
-    console.error('Error fetching from Facebook:', error.message);
-    return await fetchMockData();
+    console.error('⚠️  Error fetching from Facebook:', error.message);
+    return [];
   }
 }
 
@@ -209,7 +209,8 @@ async function fetchFromTwitter() {
           lon: coords.lon,
           location: coords.city || 'Jefferson County',
           link: `https://twitter.com/${twitterHandle}/status/${tweet.id}`,
-          timestamp: tweet.created_at
+          timestamp: tweet.created_at,
+          source: 'twitter'
         });
       }
 
@@ -249,37 +250,44 @@ async function fetchFromAlternativeSources() {
 
 /**
  * Mock data for development/testing
+ * NOTE: Only used when no real data sources are available
  */
 async function fetchMockData() {
-  console.log('Using mock scanner data for development');
+  console.log('⚠️  Using mock scanner data for development/testing');
 
   const mockIncidents = [
     {
-      title: 'Scanner: FIRE',
-      description: 'Structure fire reported on Main Street, Jefferson. Multiple units responding.',
+      id: 'mock-1',
+      title: '[MOCK] Scanner: FIRE',
+      description: '[MOCK DATA] Structure fire reported on Main Street, Jefferson. Multiple units responding.',
       type: 'fire',
       lat: 43.0056,
       lon: -88.8073,
       location: 'Jefferson',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      source: 'mock'
     },
     {
-      title: 'Scanner: TRAFFIC',
-      description: 'Vehicle accident Highway 26 near Johnson Creek. Injuries reported.',
+      id: 'mock-2',
+      title: '[MOCK] Scanner: TRAFFIC',
+      description: '[MOCK DATA] Vehicle accident Highway 26 near Johnson Creek. Injuries reported.',
       type: 'traffic',
       lat: 43.0778,
       lon: -88.7737,
       location: 'Johnson Creek',
-      timestamp: new Date(Date.now() - 30 * 60000).toISOString()
+      timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
+      source: 'mock'
     },
     {
-      title: 'Scanner: MEDICAL',
-      description: 'Medical emergency, ambulance requested to Watertown.',
+      id: 'mock-3',
+      title: '[MOCK] Scanner: MEDICAL',
+      description: '[MOCK DATA] Medical emergency, ambulance requested to Watertown.',
       type: 'medical',
       lat: 43.1947,
       lon: -88.7290,
       location: 'Watertown',
-      timestamp: new Date(Date.now() - 45 * 60000).toISOString()
+      timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
+      source: 'mock'
     }
   ];
 
@@ -291,11 +299,39 @@ async function fetchMockData() {
  */
 async function fetchAndCache() {
   try {
-    let incidents = await fetchFromFacebook();
+    let incidents = [];
 
-    // Supplement with alternative sources
-    const altIncidents = await fetchFromAlternativeSources();
-    incidents = [...incidents, ...altIncidents];
+    // Priority 1: Try RSS feed first (most reliable)
+    console.log('\n📡 Fetching scanner data from RSS feed...');
+    const rssIncidents = await fetchFromRSS();
+    if (rssIncidents.length > 0) {
+      console.log(`✅ Got ${rssIncidents.length} incidents from RSS feed`);
+      incidents.push(...rssIncidents);
+    } else {
+      console.log('⚠️  No incidents from RSS feed');
+    }
+
+    // Priority 2: Try Twitter if configured
+    const twitterIncidents = await fetchFromTwitter();
+    if (twitterIncidents.length > 0) {
+      console.log(`✅ Got ${twitterIncidents.length} incidents from Twitter`);
+      incidents.push(...twitterIncidents);
+    }
+
+    // Priority 3: Try Facebook API if configured
+    const facebookIncidents = await fetchFromFacebook();
+    // Only add Facebook incidents if they're NOT mock data
+    if (facebookIncidents.length > 0 && facebookIncidents[0].source !== 'mock') {
+      console.log(`✅ Got ${facebookIncidents.length} incidents from Facebook`);
+      incidents.push(...facebookIncidents);
+    }
+
+    // If we have no real data at all, use mock data for development
+    if (incidents.length === 0) {
+      console.log('⚠️  No real data available, using mock data for development');
+      const mockIncidents = await fetchMockData();
+      incidents.push(...mockIncidents);
+    }
 
     // Ensure data directory exists
     await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
@@ -303,11 +339,14 @@ async function fetchAndCache() {
     // Save to file
     await fs.writeFile(DATA_FILE, JSON.stringify(incidents, null, 2));
 
-    console.log(`Cached ${incidents.length} scanner incidents`);
+    console.log(`\n✅ Cached ${incidents.length} total scanner incidents`);
     return incidents;
   } catch (error) {
     console.error('Error fetching and caching scanner data:', error);
-    return [];
+
+    // Return mock data as fallback
+    console.log('Using mock data as fallback due to error');
+    return await fetchMockData();
   }
 }
 
