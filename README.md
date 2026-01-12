@@ -8,10 +8,11 @@ A real-time situation awareness platform for southeastern Wisconsin, aggregating
 ## Features
 
 - **Real-time Map Display** - Interactive map showing all incidents and alerts
+- **Intelligent Geocoding** - Automatically places incidents on the map by parsing addresses, intersections, landmarks, and city names from scanner posts
 - **Local News Aggregation** - Pulls breaking news from Milwaukee area sources
 - **Weather Alerts** - National Weather Service alerts and warnings
 - **Flight Tracking** - Tracks aircraft over southeastern Wisconsin using OpenSky Network
-- **Scanner Feeds** - Jefferson County Scanner updates from Facebook
+- **Scanner Feeds** - Jefferson County Scanner updates from Facebook via RSS
 - **Auto-refresh** - Automatically updates data every 5-15 minutes
 - **Dark Theme** - Easy-on-the-eyes dark interface
 
@@ -169,6 +170,38 @@ LATITUDE_MAX=43.5
 LONGITUDE_MIN=-89.0
 LONGITUDE_MAX=-87.8
 ```
+
+### Intelligent Geocoding
+
+The platform automatically extracts locations from scanner posts and places them accurately on the map using multiple strategies:
+
+**What it can parse:**
+- **Street Addresses**: "123 Main Street", "456 Oak Avenue"
+- **Wisconsin Highways**: "N1234 Highway 26", "W789 County Road B"
+- **Intersections**: "Highway 26 and County Road F", "Main St & Elm St"
+- **Landmarks**: "near Walmart", "at the hospital", "by Kwik Trip"
+- **60+ Cities/Towns**: Jefferson, Watertown, Fort Atkinson, Lake Mills, Johnson Creek, etc.
+
+**How it works:**
+1. **Extracts addresses** from text using regex patterns
+2. **Geocodes** using OpenStreetMap Nominatim API
+3. **Matches cities** from pre-defined coordinate database
+4. **Falls back gracefully** to nearest known location
+
+**Example:**
+```
+Scanner post: "Structure fire at 123 Main Street in Jefferson"
+→ Parses: "123 Main Street" + "Jefferson"
+→ Geocodes: 43.0056, -88.8073 (exact location in Jefferson)
+→ Places marker on map at actual fire location
+```
+
+Test the geocoding system:
+```bash
+node test-geocoding.js
+```
+
+**Supported area:** 60+ cities/towns across Milwaukee, Waukesha, Jefferson, Racine, Kenosha, Ozaukee, Washington, and Walworth counties.
 
 ### Filter Keywords
 
